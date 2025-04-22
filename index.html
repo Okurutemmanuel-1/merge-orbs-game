@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Merge Orbs Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #e0c3fc, #8ec5fc);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #fff;
+      margin-top: 20px;
+    }
+
+    #score, #highscore {
+      color: white;
+      font-size: 18px;
+    }
+
+    #game-board {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 80px);
+      grid-gap: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 20px;
+      border-radius: 20px;
+    }
+
+    .orb {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 20px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      user-select: none;
+    }
+
+    .orb.level-1 { background: linear-gradient(45deg, #ff9a9e, #fad0c4); }
+    .orb.level-2 { background: linear-gradient(45deg, #a18cd1, #fbc2eb); }
+    .orb.level-3 { background: linear-gradient(45deg, #84fab0, #8fd3f4); }
+    .orb.level-4 { background: linear-gradient(45deg, #fccb90, #d57eeb); }
+    .orb.level-5 { background: linear-gradient(45deg, #fddb92, #d1fdff); }
+
+    button {
+      margin: 10px;
+      padding: 8px 16px;
+      border: none;
+      background: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    audio { display: none; }
+  </style>
+</head>
+<body>
+
+  <h1>Merge Orbs</h1>
+  <div id="score">Score: 0</div>
+  <div id="highscore">Best: 0</div>
+  <div id="game-board"></div>
+  <button onclick="resetGame()">Reset Game</button>
+
+  <!-- Sound effects and music -->
+  <audio id="merge-sound" src="https://cdn.pixabay.com/download/audio/2022/10/23/audio_53c5b40b58.mp3?filename=pop-up-110447.mp3"></audio>
+  <audio id="bg-music" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_cfb1a68ed7.mp3?filename=loopable-soft-lounge-background-10473.mp3" autoplay loop></audio>
+
+  <script>
+    const board = document.getElementById('game-board');
+    const scoreDisplay = document.getElementById('score');
+    const highscoreDisplay = document.getElementById('highscore');
+    const mergeSound = document.getElementById('merge-sound');
+    const bgMusic = document.getElementById('bg-music');
+
+    let selectedOrb = null;
+    let score = 0;
+    let highscore = localStorage.getItem('highscore') || 0;
+
+    function createOrb(level = 1) {
+      const orb = document.createElement('div');
+      orb.classList.add('orb', `level-${level}`);
+      orb.textContent = level;
+      orb.dataset.level = level;
+      orb.onclick = () => handleOrbClick(orb);
+      return orb;
+    }
+
+    function handleOrbClick(orb) {
+      if (!selectedOrb) {
+        selectedOrb = orb;
+        orb.style.transform = 'scale(1.1)';
+      } else if (selectedOrb === orb) {
+        orb.style.transform = 'scale(1)';
+        selectedOrb = null;
+      } else {
+        const level1 = parseInt(selectedOrb.dataset.level);
+        const level2 = parseInt(orb.dataset.level);
+        if (level1 === level2) {
+          const newLevel = level1 + 1;
+          const newOrb = createOrb(newLevel);
+          board.replaceChild(newOrb, orb);
+          board.removeChild(selectedOrb);
+          score += newLevel * 10;
+          mergeSound.play();
+          updateScore();
+        }
+        selectedOrb.style.transform = 'scale(1)';
+        selectedOrb = null;
+      }
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = 'Score: ' + score;
+      if (score > highscore) {
+        highscore = score;
+        localStorage.setItem('highscore', highscore);
+        highscoreDisplay.textContent = 'Best: ' + highscore;
+      }
+    }
+
+    function resetGame() {
+      board.innerHTML = '';
+      selectedOrb = null;
+      score = 0;
+      updateScore();
+      for (let i = 0; i < 16; i++) {
+        const orb = createOrb(Math.random() > 0.5 ? 1 : 2);
+        board.appendChild(orb);
+      }
+    }
+
+    function handleSwipe(e) {
+      if (!e.changedTouches) return;
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        // horizontal swipe
+        alert(dx > 0 ? "Swipe Right!" : "Swipe Left!");
+      } else {
+        // vertical swipe
+        alert(dy > 0 ? "Swipe Down!" : "Swipe Up!");
+      }
+    }
+
+    let startX = 0, startY = 0;
+    document.addEventListener("touchstart", e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    });
+
+    document.addEventListener("touchend", handleSwipe);
+
+    // Start the game
+    resetGame();
+    highscoreDisplay.textContent = 'Best: ' + highscore;
+  </script>
+</body>
+</html>
