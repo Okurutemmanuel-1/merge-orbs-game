@@ -3,12 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Merge Orbs Game</title>
+  <title>Merge Orbs: Tron FX</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
   <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
     body {
       margin: 0;
-      font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #e0c3fc, #8ec5fc);
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(270deg, #0f0c29, #302b63, #24243e);
+      background-size: 600% 600%;
+      animation: backgroundShift 20s ease infinite;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -17,80 +24,148 @@
       overflow: hidden;
     }
 
-    h1 {
-      color: #fff;
-      margin-top: 20px;
+    @keyframes backgroundShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
     }
 
-    #score, #highscore {
-      color: white;
-      font-size: 18px;
+    h1 {
+      color: #00ffff;
+      text-shadow: 0 0 5px #0ff, 0 0 15px #0ff;
+      margin: 20px 0 10px;
+    }
+
+    #scoreboard {
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #0ff;
+      border-radius: 12px;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+      color: #ffffffaa;
+      text-shadow: 0 0 3px #0ff;
     }
 
     #game-board {
-      margin-top: 10px;
+      margin-top: 15px;
       display: grid;
       grid-template-columns: repeat(4, 80px);
-      grid-gap: 10px;
-      background: rgba(255, 255, 255, 0.15);
+      gap: 10px;
       padding: 20px;
       border-radius: 20px;
+      background: rgba(0,0,0,0.2);
+      backdrop-filter: blur(10px);
     }
 
     .orb {
       width: 80px;
       height: 80px;
       border-radius: 50%;
-      background: linear-gradient(45deg, #ff9a9e, #fad0c4);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: bold;
       font-size: 20px;
-      color: white;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-      user-select: none;
+      color: #0ff;
+      border: 2px solid #0ff;
+      box-shadow: 0 0 10px #0ff66f, 0 0 20px #0ff inset;
+      animation: float 3s ease-in-out infinite, trail 1s ease-out;
+      background: radial-gradient(circle at 30% 30%, #111122, #000000);
+      position: relative;
     }
 
-    .orb.level-1 { background: linear-gradient(45deg, #ff9a9e, #fad0c4); }
-    .orb.level-2 { background: linear-gradient(45deg, #a18cd1, #fbc2eb); }
-    .orb.level-3 { background: linear-gradient(45deg, #84fab0, #8fd3f4); }
-    .orb.level-4 { background: linear-gradient(45deg, #fccb90, #d57eeb); }
-    .orb.level-5 { background: linear-gradient(45deg, #fddb92, #d1fdff); }
+    .orb:hover {
+      transform: scale(1.1);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes trail {
+      0% {
+        box-shadow: 0 0 10px #0ff66f, 0 0 20px #0ff inset;
+      }
+      100% {
+        box-shadow: 0 0 30px #0ff66f, 0 0 50px #0ff inset;
+      }
+    }
+
+    .particle {
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #0ff;
+      pointer-events: none;
+      animation: explode 0.5s ease-out forwards;
+    }
+
+    @keyframes explode {
+      to {
+        transform: translate(var(--x), var(--y)) scale(0.1);
+        opacity: 0;
+      }
+    }
 
     button {
-      margin: 10px;
-      padding: 8px 16px;
+      margin: 15px;
+      padding: 10px 20px;
       border: none;
-      background: white;
-      border-radius: 10px;
+      border-radius: 12px;
+      font-family: 'Orbitron';
+      background: #0ff;
+      color: #000;
       cursor: pointer;
       font-weight: bold;
+      box-shadow: 0 0 10px #0ff;
+    }
+
+    button:hover {
+      background: #00ffffcc;
+    }
+
+    @media (max-width: 500px) {
+      #game-board {
+        grid-template-columns: repeat(4, 60px);
+        gap: 8px;
+      }
+      .orb {
+        width: 60px;
+        height: 60px;
+        font-size: 16px;
+      }
     }
 
     audio { display: none; }
   </style>
 </head>
 <body>
-
   <h1>Merge Orbs</h1>
-  <div id="score">Score: 0</div>
-  <div id="highscore">Best: 0</div>
+  <div id="scoreboard">
+    <div id="score">Score: 0</div>
+    <div id="highscore">Best: 0</div>
+  </div>
   <div id="game-board"></div>
   <button onclick="resetGame()">Reset Game</button>
 
-  <!-- Sound effects and music -->
-  <audio id="merge-sound" src="https://cdn.pixabay.com/download/audio/2022/10/23/audio_53c5b40b58.mp3?filename=pop-up-110447.mp3"></audio>
+  <!-- Sounds -->
   <audio id="bg-music" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_cfb1a68ed7.mp3?filename=loopable-soft-lounge-background-10473.mp3" autoplay loop></audio>
+  <audio id="merge1" src="https://cdn.pixabay.com/download/audio/2022/03/26/audio_ae292fd5ff.mp3?filename=click-124467.mp3"></audio>
+  <audio id="merge2" src="https://cdn.pixabay.com/download/audio/2021/10/20/audio_c33d4d7350.mp3?filename=success-1-6297.mp3"></audio>
+  <audio id="merge3" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_ebd32e3ef7.mp3?filename=ui-confirmation-alert-98756.mp3"></audio>
 
   <script>
     const board = document.getElementById('game-board');
     const scoreDisplay = document.getElementById('score');
     const highscoreDisplay = document.getElementById('highscore');
-    const mergeSound = document.getElementById('merge-sound');
-    const bgMusic = document.getElementById('bg-music');
+    const sounds = {
+      1: document.getElementById('merge1'),
+      2: document.getElementById('merge2'),
+      3: document.getElementById('merge3')
+    };
 
     let selectedOrb = null;
     let score = 0;
@@ -98,17 +173,34 @@
 
     function createOrb(level = 1) {
       const orb = document.createElement('div');
-      orb.classList.add('orb', `level-${level}`);
+      orb.classList.add('orb');
       orb.textContent = level;
       orb.dataset.level = level;
       orb.onclick = () => handleOrbClick(orb);
       return orb;
     }
 
+    function playMergeSound(level) {
+      const sound = sounds[Math.min(level, 3)];
+      sound.currentTime = 0;
+      sound.play();
+    }
+
+    function createParticles(parent) {
+      for (let i = 0; i < 10; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.setProperty('--x', `${(Math.random() - 0.5) * 80}px`);
+        p.style.setProperty('--y', `${(Math.random() - 0.5) * 80}px`);
+        parent.appendChild(p);
+        setTimeout(() => p.remove(), 500);
+      }
+    }
+
     function handleOrbClick(orb) {
       if (!selectedOrb) {
         selectedOrb = orb;
-        orb.style.transform = 'scale(1.1)';
+        orb.style.transform = 'scale(1.2)';
       } else if (selectedOrb === orb) {
         orb.style.transform = 'scale(1)';
         selectedOrb = null;
@@ -121,8 +213,9 @@
           board.replaceChild(newOrb, orb);
           board.removeChild(selectedOrb);
           score += newLevel * 10;
-          mergeSound.play();
           updateScore();
+          playMergeSound(newLevel);
+          createParticles(newOrb);
         }
         selectedOrb.style.transform = 'scale(1)';
         selectedOrb = null;
@@ -149,29 +242,24 @@
       }
     }
 
-    function handleSwipe(e) {
-      if (!e.changedTouches) return;
-      const touch = e.changedTouches[0];
-      const dx = touch.clientX - startX;
-      const dy = touch.clientY - startY;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        // horizontal swipe
-        alert(dx > 0 ? "Swipe Right!" : "Swipe Left!");
-      } else {
-        // vertical swipe
-        alert(dy > 0 ? "Swipe Down!" : "Swipe Up!");
-      }
-    }
-
+    // Swipe support
     let startX = 0, startY = 0;
     document.addEventListener("touchstart", e => {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
     });
 
-    document.addEventListener("touchend", handleSwipe);
+    document.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        alert(dx > 0 ? "Swipe Right" : "Swipe Left");
+      } else {
+        alert(dy > 0 ? "Swipe Down" : "Swipe Up");
+      }
+    });
 
-    // Start the game
+    // Start
     resetGame();
     highscoreDisplay.textContent = 'Best: ' + highscore;
   </script>
