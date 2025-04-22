@@ -5,196 +5,151 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Merge Orbs: Tron FX</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getDatabase, ref, push, set, query, orderByChild, limitToLast, get } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDmCBr78BU9MrI42TkuVXqnKdFGSWeTE2w",
+      authDomain: "mergeorbsgame.firebaseapp.com",
+      projectId: "mergeorbsgame",
+      storageBucket: "mergeorbsgame.firebasestorage.app",
+      messagingSenderId: "216676663289",
+      appId: "1:216676663289:web:687fa7daf1e82abd5d4728",
+      measurementId: "G-6HCK32796V",
+      databaseURL: "https://mergeorbsgame-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    let userId = null;
+
+    signInAnonymously(auth)
+      .then(result => {
+        userId = result.user.uid;
+      });
+
+    window.saveScore = function(score) {
+      if (!userId) return;
+      const scoreRef = ref(db, 'leaderboard/');
+      const newScoreRef = push(scoreRef);
+      set(newScoreRef, {
+        uid: userId,
+        score: score,
+        timestamp: Date.now()
+      });
+    };
+
+    window.getLeaderboard = async function() {
+      const leaderboardRef = query(ref(db, 'leaderboard'), orderByChild('score'), limitToLast(5));
+      const snapshot = await get(leaderboardRef);
+      const top = [];
+      snapshot.forEach(child => {
+        top.push(child.val());
+      });
+      top.sort((a, b) => b.score - a.score);
+      const board = document.getElementById('leaderboard');
+      board.innerHTML = "<h3>Top Scores</h3>" + top.map(p => `<p>${p.score}</p>`).join('');
+    };
+  </script>
   <style>
-    * {
-      box-sizing: border-box;
-      user-select: none;
-    }
-    body {
+    body, html {
       margin: 0;
       font-family: 'Orbitron', sans-serif;
-      background: linear-gradient(270deg, #0f0c29, #302b63, #24243e);
-      background-size: 600% 600%;
-      animation: backgroundShift 20s ease infinite;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
+      background: #0f0c29;
+      color: #00ffff;
       height: 100vh;
       overflow: hidden;
     }
-
-    @keyframes backgroundShift {
-      0% {background-position: 0% 50%;}
-      50% {background-position: 100% 50%;}
-      100% {background-position: 0% 50%;}
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
     }
-
-    h1 {
-      color: #00ffff;
-      text-shadow: 0 0 5px #0ff, 0 0 15px #0ff;
-      margin: 20px 0 10px;
+    .active {
+      display: flex;
     }
-
-    #scoreboard {
+    button {
+      background: #00ffff;
+      border: none;
       padding: 10px 20px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid #0ff;
-      border-radius: 12px;
-      backdrop-filter: blur(5px);
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-      color: #ffffffaa;
-      text-shadow: 0 0 3px #0ff;
+      margin: 10px;
+      font-family: 'Orbitron';
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
     }
-
     #game-board {
-      margin-top: 15px;
       display: grid;
       grid-template-columns: repeat(4, 80px);
       gap: 10px;
-      padding: 20px;
-      border-radius: 20px;
-      background: rgba(0,0,0,0.2);
-      backdrop-filter: blur(10px);
+      margin-top: 20px;
     }
-
     .orb {
       width: 80px;
       height: 80px;
       border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #111, #000);
+      color: #0ff;
+      font-weight: bold;
+      font-size: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: bold;
-      font-size: 20px;
-      color: #0ff;
-      border: 2px solid #0ff;
-      box-shadow: 0 0 10px #0ff66f, 0 0 20px #0ff inset;
-      animation: float 3s ease-in-out infinite, trail 1s ease-out;
-      background: radial-gradient(circle at 30% 30%, #111122, #000000);
+      box-shadow: 0 0 15px #0ff66f, 0 0 30px #0ff inset;
+      transition: transform 0.3s ease;
       position: relative;
     }
-
-    .orb:hover {
-      transform: scale(1.1);
+    .orb.merging {
+      animation: pulse 0.4s ease;
     }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-6px); }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.4); }
+      100% { transform: scale(1); }
     }
-
-    @keyframes trail {
-      0% {
-        box-shadow: 0 0 10px #0ff66f, 0 0 20px #0ff inset;
-      }
-      100% {
-        box-shadow: 0 0 30px #0ff66f, 0 0 50px #0ff inset;
-      }
-    }
-
-    .particle {
-      position: absolute;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: #0ff;
-      pointer-events: none;
-      animation: explode 0.5s ease-out forwards;
-    }
-
-    @keyframes explode {
-      to {
-        transform: translate(var(--x), var(--y)) scale(0.1);
-        opacity: 0;
-      }
-    }
-
-    button {
-      margin: 15px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 12px;
-      font-family: 'Orbitron';
-      background: #0ff;
-      color: #000;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 0 10px #0ff;
-    }
-
-    button:hover {
-      background: #00ffffcc;
-    }
-
-    @media (max-width: 500px) {
-      #game-board {
-        grid-template-columns: repeat(4, 60px);
-        gap: 8px;
-      }
-      .orb {
-        width: 60px;
-        height: 60px;
-        font-size: 16px;
-      }
-    }
-
-    audio { display: none; }
   </style>
 </head>
 <body>
-  <h1>Merge Orbs</h1>
-  <div id="scoreboard">
-    <div id="score">Score: 0</div>
-    <div id="highscore">Best: 0</div>
+  <div id="splash" class="screen active">
+    <h1>Merge Orbs: Tron FX</h1>
+    <button onclick="startGame()">Start Game</button>
+    <div id="leaderboard"></div>
   </div>
-  <div id="game-board"></div>
-  <button onclick="resetGame()">Reset Game</button>
 
-  <!-- Sounds -->
-  <audio id="bg-music" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_cfb1a68ed7.mp3?filename=loopable-soft-lounge-background-10473.mp3" autoplay loop></audio>
-  <audio id="merge1" src="https://cdn.pixabay.com/download/audio/2022/03/26/audio_ae292fd5ff.mp3?filename=click-124467.mp3"></audio>
-  <audio id="merge2" src="https://cdn.pixabay.com/download/audio/2021/10/20/audio_c33d4d7350.mp3?filename=success-1-6297.mp3"></audio>
-  <audio id="merge3" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_ebd32e3ef7.mp3?filename=ui-confirmation-alert-98756.mp3"></audio>
+  <div id="game" class="screen">
+    <div>
+      <div id="score">Score: 0</div>
+      <button onclick="resetGame()">Reset</button>
+    </div>
+    <div id="game-board"></div>
+  </div>
 
   <script>
+    const splash = document.getElementById('splash');
+    const game = document.getElementById('game');
     const board = document.getElementById('game-board');
     const scoreDisplay = document.getElementById('score');
-    const highscoreDisplay = document.getElementById('highscore');
-    const sounds = {
-      1: document.getElementById('merge1'),
-      2: document.getElementById('merge2'),
-      3: document.getElementById('merge3')
-    };
-
     let selectedOrb = null;
     let score = 0;
-    let highscore = localStorage.getItem('highscore') || 0;
+
+    function startGame() {
+      splash.classList.remove('active');
+      game.classList.add('active');
+      resetGame();
+    }
 
     function createOrb(level = 1) {
       const orb = document.createElement('div');
-      orb.classList.add('orb');
-      orb.textContent = level;
+      orb.className = 'orb';
       orb.dataset.level = level;
+      orb.textContent = level;
       orb.onclick = () => handleOrbClick(orb);
       return orb;
-    }
-
-    function playMergeSound(level) {
-      const sound = sounds[Math.min(level, 3)];
-      sound.currentTime = 0;
-      sound.play();
-    }
-
-    function createParticles(parent) {
-      for (let i = 0; i < 10; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.setProperty('--x', `${(Math.random() - 0.5) * 80}px`);
-        p.style.setProperty('--y', `${(Math.random() - 0.5) * 80}px`);
-        parent.appendChild(p);
-        setTimeout(() => p.remove(), 500);
-      }
     }
 
     function handleOrbClick(orb) {
@@ -205,63 +160,34 @@
         orb.style.transform = 'scale(1)';
         selectedOrb = null;
       } else {
-        const level1 = parseInt(selectedOrb.dataset.level);
-        const level2 = parseInt(orb.dataset.level);
-        if (level1 === level2) {
-          const newLevel = level1 + 1;
+        const l1 = parseInt(selectedOrb.dataset.level);
+        const l2 = parseInt(orb.dataset.level);
+        if (l1 === l2) {
+          const newLevel = l1 + 1;
           const newOrb = createOrb(newLevel);
+          newOrb.classList.add('merging');
           board.replaceChild(newOrb, orb);
           board.removeChild(selectedOrb);
           score += newLevel * 10;
-          updateScore();
-          playMergeSound(newLevel);
-          createParticles(newOrb);
+          scoreDisplay.textContent = "Score: " + score;
+          saveScore(score);
         }
         selectedOrb.style.transform = 'scale(1)';
         selectedOrb = null;
       }
     }
 
-    function updateScore() {
-      scoreDisplay.textContent = 'Score: ' + score;
-      if (score > highscore) {
-        highscore = score;
-        localStorage.setItem('highscore', highscore);
-        highscoreDisplay.textContent = 'Best: ' + highscore;
-      }
-    }
-
     function resetGame() {
       board.innerHTML = '';
-      selectedOrb = null;
       score = 0;
-      updateScore();
+      scoreDisplay.textContent = "Score: 0";
       for (let i = 0; i < 16; i++) {
         const orb = createOrb(Math.random() > 0.5 ? 1 : 2);
         board.appendChild(orb);
       }
     }
 
-    // Swipe support
-    let startX = 0, startY = 0;
-    document.addEventListener("touchstart", e => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    });
-
-    document.addEventListener("touchend", e => {
-      const dx = e.changedTouches[0].clientX - startX;
-      const dy = e.changedTouches[0].clientY - startY;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        alert(dx > 0 ? "Swipe Right" : "Swipe Left");
-      } else {
-        alert(dy > 0 ? "Swipe Down" : "Swipe Up");
-      }
-    });
-
-    // Start
-    resetGame();
-    highscoreDisplay.textContent = 'Best: ' + highscore;
+    getLeaderboard(); // Load leaderboard
   </script>
 </body>
 </html>
